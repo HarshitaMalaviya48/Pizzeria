@@ -15,6 +15,8 @@ const getUser = async (req, res) => {
  
   const result = await getUserFromId(userId);
   if (result.error) {
+  
+    
     return errorResponse(res, result.status, result.message, result.details);
   }
 

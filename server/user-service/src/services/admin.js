@@ -2,6 +2,8 @@ const axios = require("axios");
 require("dotenv").config();
 const BASE_URL = process.env.BASE_URL;
 
+
+
 const deleteUser = async (userId) => {
   try {
     console.log("in user-service deleteUser 1");
@@ -76,13 +78,13 @@ const updateUser = async (
       user: response.data.data
     };
   } catch (err) {
-    console.log("in deleteUser", err.message);
+    console.log("in deleteUser", err);
     // console.log("in deleteUser", err.response);
     return {
       error: true,
       status: err.response?.status || 500,
       message: err.response?.data?.message || "server error",
-      details: err.message,
+      details: err.response?.data?.error,
     };
   }
 };

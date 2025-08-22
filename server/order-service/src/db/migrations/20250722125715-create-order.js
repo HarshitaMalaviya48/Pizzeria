@@ -23,7 +23,7 @@ module.exports = {
       },
       status: {
         defaultValue: 'Pending Payment',
-        type: Sequelize.ENUM('Pending Payment', 'Accepted', 'Prepared', 'Dispatched', 'Delivered'),
+        type: Sequelize.ENUM('Pending Payment',  'Accepted', 'Prepared', 'Dispatched', 'Delivered'),
       },
       order_date: {
         type: Sequelize.DATE,

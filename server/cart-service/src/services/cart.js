@@ -47,6 +47,8 @@ const getCartByUser = async (userId, token) => {
       })
     );
 
+
+
     cartObj.items = newCartItems;
 
     return {
@@ -116,8 +118,65 @@ const addItem = async (userId, pizzaId, quantity) => {
   }
 };
 
+const updateQuantity = async (userId, pizzaId, quantity) => {
+  try {
+    const cart = await Cart.findOne({ where: { user_id: userId } });
+    if (!cart) {
+      return {
+        error: true,
+        statusCode: 404,
+        message: "Cart not found",
+      };
+    }
+
+    const item = await CartItem.findOne({
+      where: {
+        cart_id: cart.id,
+        pizza_id: pizzaId,
+      },
+    });
+
+    if (!item) {
+      return {
+        error: true,
+        statusCode: 404,
+        message: "Item not found in cart",
+      };
+    }
+
+    if (quantity === 0) {
+      await item.destroy();
+      return {
+        error: false,
+        statusCode: 200,
+        message: "Item removed from cart",
+      };
+    } else {
+      item.quantity = quantity;
+      await item.save();
+      return {
+        error: false,
+        statusCode: 200,
+        message: "Quantity updated",
+        result: item,
+      };
+    }
+  } catch (error) {
+    console.log("Error in updateItemQuantity:", error.message);
+    return {
+      error: true,
+      statusCode: 500,
+      message: "Server error",
+      details: error.message,
+    };
+  }
+};
+
+
 const deleteItem = async (itemId, userId) => {
   try {
+    console.log("------------", itemId, userId);
+    
     const item = await CartItem.findByPk(itemId, {
       include: { model: Cart, as: "cart" },
     });
@@ -149,6 +208,8 @@ const deleteItem = async (itemId, userId) => {
     };
   }
 };
+
+
 
 const removeCartItemCalledByOrderService = async (user_id, pizza_id) => {
   try {
@@ -236,5 +297,6 @@ module.exports = {
   addItem,
   deleteItem,
   removeCartItemCalledByOrderService,
-  getCartItemCalledByOrderService
+  getCartItemCalledByOrderService,
+  updateQuantity
 };

@@ -11,6 +11,10 @@ export default defineConfig({
       remotes: {
         remote_auth_app: "http://localhost:5001/assets/remoteEntry.js",
         remote_user_app: "http://localhost:5002/assets/remoteEntry.js",
+        remote_admin_app: "http://localhost:5003/assets/remoteEntry.js",
+      },
+      exposes: {
+        "./toast": "./src/utils/toast.jsx"
       },
 
       shared: {

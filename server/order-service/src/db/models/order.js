@@ -18,6 +18,7 @@ module.exports = (sequelize, DataTypes) => {
       total_price: { type: DataTypes.DECIMAL, allowNull: false },
       status: DataTypes.ENUM(
         "Pending Payment",
+        'Payment Done',
         "Accepted",
         "Prepared",
         "Dispatched",

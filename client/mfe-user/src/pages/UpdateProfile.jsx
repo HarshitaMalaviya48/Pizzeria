@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import styles from "../styles/UpdateProfile.module.css";
-import {AuthConsumer} from "remote_auth_app/store/auth";
+import { AuthConsumer } from "remote_auth_app/store/auth";
+import { showToast } from "host/toast";
 
 function UpdateProfile() {
-const {setToken } = AuthConsumer();
+  const { setAuth } = AuthConsumer();
   // const token = localStorage.getItem("token");
   // console.log("------token", token);
   const navigate = useNavigate();
-  const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MzEsInJvbGUiOiJ1c2VyIiwidXNlcm5hbWUiOiJ0ZXN0MTIzNCIsImVtYWlsIjoidGVzdDk5QGdtYWlsLmNvbSIsImlhdCI6MTc1NDQ2ODUwMCwiZXhwIjoxNzU0NDk3MzAwfQ.ep9M4oo7Q2HPLXLZZzzJkuDEAT8WZiUx5xpj3Jk387s";
+  const token =
+    localStorage.getItem("token") ||
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MzEsInJvbGUiOiJ1c2VyIiwidXNlcm5hbWUiOiJ0ZXN0MTIzNCIsImVtYWlsIjoidGVzdDk5QGdtYWlsLmNvbSIsImlhdCI6MTc1NTU4MzA5MSwiZXhwIjoxNzU1NjExODkxfQ.qwM9VY-LtbT3ADDkfKYIuv0zKu_Yt1a075Q5aTWkOQw";
 
   const initialFormValue = {
     firstname: "",
@@ -40,14 +42,14 @@ const {setToken } = AuthConsumer();
 
       const result = await response.json();
       if (response.status === 401) {
-        toast.error(result.message);
+        showToast(result.message, "error");
         navigate("/login");
         return;
       }
       if (result.success && response.ok) {
         setUserData(result.data.user);
       } else if (!response.ok && !result.success) {
-        toast.error(result.message);
+        showToast(result.message, "error")
       }
       console.log("------------response", response);
       console.log("------------result", result);
@@ -140,18 +142,19 @@ const {setToken } = AuthConsumer();
 
     console.log("email response", response);
     console.log("email result", result);
-    if (!response.ok && response.status === 400) {
+    if (!response.ok && response.status === 400 ) {
       setFormErrors(result.error);
     } else if (response.ok && result.success) {
       console.log("navigate to login from email");
       setEmailInput({ email: "" });
       setFormErrors({});
       localStorage.removeItem("token");
-      setToken("");
-      toast.success(result.message);
-      navigate("/login");
+      setAuth({ token: "", role: "" });
+      showToast(result.message, "success");
+      window.location.href = "http://localhost:5000/login";
+      // navigate("../../login");
     } else if (!response.ok && response.status === 401) {
-      toast.error(response.message);
+      showToast(result.message, "error");
     }
   };
 
@@ -181,16 +184,22 @@ const {setToken } = AuthConsumer();
       console.log("navigate to login from password");
       setPasswordInput({ password: "", confirmpassword: "" });
       setFormErrors({});
-      toast.success(result.message);
+      showToast(result.message, "success");
       localStorage.removeItem("token");
-      setToken("");
-      navigate("/login");
+      setAuth({ token: "", role: "" });
+
+      window.location.href = "http://localhost:5000/login";
+
+      // navigate("../../login");
     } else if (!response.ok && response.status === 401) {
-      toast.error(response.message);
+     showToast(result.message, "error");
     }
   };
   const handleDeleteBtn = async () => {
     try {
+      const confirmed = window.confirm("Are you sure you want to delete user?");
+      if (!confirmed) return;
+
       const response = await fetch("http://localhost:3000/users/delete/me", {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
@@ -200,14 +209,18 @@ const {setToken } = AuthConsumer();
       console.log("delete button response", response);
       console.log("delete button result", result);
       if (response.ok && result.success) {
-        toast.success(result.message);
+      showToast(result.message, "success");
+        localStorage.removeItem("token");
+        setAuth({ token: "", role: "" });
+        window.location.href = "http://localhost:5000/signup";
         navigate("/signup");
-         localStorage.removeItem("token");
-        setToken("");
-      } else if (!response.status && result.success) {
-        toast.error(result.message);
+      }else if(!response.ok && response.status === 409){
+        // console.log("in 409");
+          showToast(result.message, "error");
+      } else if (!response.ok && !result.success) {
+        // console.log("in not wanted");
+          showToast(result.message, "error");
         navigate("/signup");
-       
       }
     } catch (error) {
       console.log("Error while deleting user", error);

@@ -9,6 +9,8 @@ const successResponse = (res, statusCode, message, data = {}) => {
 };
 
 const errorResponse = (res, statusCode, message, details = null) => {
+  console.log("details in errorResponse", details);
+  
   const response = {
     success: false,
     message,
@@ -16,6 +18,8 @@ const errorResponse = (res, statusCode, message, details = null) => {
 
   if (details) {
     response.error = details;
+    console.log(response.error);
+    
   }
 
   return res.status(statusCode).json(response);

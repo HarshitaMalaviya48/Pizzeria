@@ -15,6 +15,11 @@ export default defineConfig({
         "./components/PrivateRoute": "./src/components/PrivateRoute.jsx",
         "./components/PublicRoute": "./src/components/PublicRoute.jsx",
       },
+      remotes: {
+        remote_user_app: "http://localhost:5002/assets/remoteEntry.js",
+        remote_admin_app: "http://localhost:5003/assets/remoteEntry.js",
+        host: "http://localhost:5000/assets/remoteEntry.js"
+      },
      
       shared: {
         "react": {
@@ -24,9 +29,6 @@ export default defineConfig({
           singleton: true,
         },
         "react-router-dom": {
-          singleton: true,
-        },
-        "react-toastify": {
           singleton: true,
         },
       },

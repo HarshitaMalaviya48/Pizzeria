@@ -84,6 +84,23 @@ const deleteUser = async (userId, token) => {
       };
     }
 
+    const response = await fetch("http://localhost:3000/order/user/get-orders", {
+      method: "GET",
+      headers: {"Authorization": `Bearer ${token}`}
+    });
+
+    const result = await response.json();
+    console.log("result,", result);
+
+    if(result.success && result.data.orders.length > 0){
+      return {
+        error: true,
+        status: 409,
+        message: "You cannot delete your account while you still have active or past orders."
+      }
+    }
+    
+
     const decoded = jwt.decode(token);
     console.log("decoded token", decoded);
     
@@ -108,6 +125,7 @@ const deleteUser = async (userId, token) => {
 const updateUser = async (userId, newData) => {
   try {
     const { isValid, errors } = validateUserInput(newData, "update");
+    console.log("validation error while updating user", isValid, errors);
 
     if (!isValid) {
       return {
@@ -117,6 +135,8 @@ const updateUser = async (userId, newData) => {
         details: errors,
       };
     }
+
+    
 
     const user = await User.findByPk(userId);
 
@@ -146,10 +166,22 @@ const updateUser = async (userId, newData) => {
         username: updatedUser.username,
         role: updatedUser.role,
         phoneno: updatedUser.phoneno,
+        address: updatedUser.address
       },
     };
   } catch (err) {
     console.log("error in updateUser", err);
+    if(err.name === "SequelizeUniqueConstraintError"){
+      console.log("name",err.errors[0].path);
+      
+      const field = err.errors[0].path;
+      return {
+      error: true,
+      status: 400,
+      message: "server error",
+      details: {[field]: `${field} already exist`},
+    };
+    }
     return {
       error: true,
       status: 500,
@@ -184,6 +216,7 @@ const updateEmail = async (userId, email, token) => {
         message: "Access denied: Admin can not be update.",
       };
     }
+
     const updatedUser = await user.update(email);
     console.log("updated user", updatedUser);
 
@@ -203,6 +236,15 @@ const updateEmail = async (userId, email, token) => {
     };
   } catch (error) {
     console.log("error in updateUser", error);
+    if(error.name === "SequelizeUniqueConstraintError"){
+      const field = error.errors[0].path;
+      return {
+      error: true,
+      status: 400,
+      message: "server error",
+      details: {[field]: `${field} already exist`},
+    };
+    }
     return {
       error: true,
       status: 500,

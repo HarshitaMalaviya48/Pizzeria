@@ -1,41 +1,55 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import styles from "../styles/Navbar.module.css";
 import { AuthConsumer } from "remote_auth_app/store/auth";
 
 function Navbar() {
-  const { token } = AuthConsumer();
+  const navigate = useNavigate();
+  const { token, role, setAuth } = AuthConsumer();
+  const tokenFromLocal = localStorage.getItem("token");
+  const roleFromLocal = localStorage.getItem("role");
+  const handleLogout = () => {
+     const confirmed = window.confirm("Are you sure you want to logout?");
+  if (!confirmed) return;
+
+    setAuth({ token: "", role: "" }); // clears context + localStorage
+    navigate("/login")
+  };
+
+   const getLinkClass = ({ isActive }) =>
+    isActive ? `${styles.link} ${styles.active}` : styles.link;
+
   return (
     <nav className={styles.navbar}>
       <div className={styles.navbarLogo}>
         <i className="fa-solid fa-pizza-slice"></i> PizzaExpress
       </div>
       <ul className={styles.navbarLinks}>
-        {token ? (
+       {!tokenFromLocal && (
           <>
             <li>
-              <NavLink to="/user/home">Home</NavLink>
+              <NavLink to="/signup" className={getLinkClass}>Sign Up</NavLink>
             </li>
             <li>
-              <NavLink to="/user/cart">Cart</NavLink>
-            </li>
-            <li>
-              <NavLink to="/user/orders">Orders</NavLink>
-            </li>
-            <li>
-              <NavLink to="/user/update-profile">Profile</NavLink>
-            </li>
-            <li>
-              <button>Logout</button>
+              <NavLink to="/login" className={getLinkClass}>Login</NavLink>
             </li>
           </>
-        ) : (
+        )}
+
+        {roleFromLocal && roleFromLocal === "user" && (
           <>
-            <li>
-              <NavLink to="/signup">Sign Up</NavLink>
-            </li>
-            <li>
-              <NavLink to="/login">Login</NavLink>
-            </li>
+            <li><NavLink to="/user/home" className={getLinkClass}>Home</NavLink></li>
+            <li><NavLink to="/user/cart" className={getLinkClass}>Cart</NavLink></li>
+            <li><NavLink to="/user/orders" className={getLinkClass}>Orders</NavLink></li>
+            <li><NavLink to="/user/update-profile" className={getLinkClass}>Profile</NavLink></li>
+            <li><button className={styles.btnSecondary} onClick={handleLogout}>Logout</button></li>
+          </>
+        )}
+
+        {roleFromLocal && roleFromLocal === "admin" && (
+          <>
+            <li><NavLink to="/admin/orders" className={getLinkClass}>Orders</NavLink></li>
+            <li><NavLink to="/admin/users" className={getLinkClass}>Users</NavLink></li>
+            <li><button className={styles.btnSecondary} onClick={handleLogout}>Logout</button></li>
           </>
         )}
       </ul>

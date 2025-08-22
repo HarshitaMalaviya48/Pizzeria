@@ -1,6 +1,9 @@
 const axios = require("axios");
 require("dotenv").config();
 const { Op } = require("sequelize");
+// const { io } = require("../../server.js");
+const { getIo } = require("../../socket.js");
+
 
 const db = require("../db/models/index.js");
 const { Order, OrderItem } = db;
@@ -8,15 +11,12 @@ const createOrAppendOrder = async (userId, pizzaId, token) => {
   try {
     let pizzaFromCart;
     try {
-     const pizzaResponse = await axios.get(
+      const pizzaResponse = await axios.get(
         `http://localhost:3003/user/${userId}/pizza/${pizzaId}`
-
       );
       console.log("-----------pizzaFromCart", pizzaResponse);
       pizzaFromCart = pizzaResponse.data.data;
       console.log("-----------pizzaFromCart", pizzaFromCart);
-      
-
     } catch (error) {
       console.log("in order-service ", error);
       const status = error.response?.status || 500;
@@ -56,8 +56,12 @@ const createOrAppendOrder = async (userId, pizzaId, token) => {
     let order = await Order.findOne({
       where: { user_id: userId, status: "Pending Payment" },
     });
+    console.log("before creating order", order);
+    
 
     if (!order) {
+      console.log("to create order");
+      
       order = await Order.create({
         user_id: userId,
         total_price: 0,
@@ -67,7 +71,7 @@ const createOrAppendOrder = async (userId, pizzaId, token) => {
         status: "Pending Payment",
       });
     }
-    console.log("order------------", order);
+    // console.log("order------------", order);
 
     let item = await OrderItem.findOne({
       where: {
@@ -83,6 +87,12 @@ const createOrAppendOrder = async (userId, pizzaId, token) => {
         price: pizzaFromPizzaCatalog.price,
         quantity: pizzaFromCart.quantity,
       });
+    }else{
+      return {
+        error: true,
+        statusCode: 409,
+        message: `${pizzaFromPizzaCatalog.pizzaname} already exists in order`
+      }
     }
 
     const allItems = await OrderItem.findAll({ where: { order_id: order.id } });
@@ -158,11 +168,38 @@ const createOrAppendOrder = async (userId, pizzaId, token) => {
   }
 };
 
-const getAllOrdersByUser = async (userId) => {
+const getPizzaById = async (pizzaId, token) => {
+  try {
+    // Assuming your pizza service runs on same server at port 3001
+    const response = await axios.get(
+      `http://localhost:3000/pizza/get/${pizzaId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    if (response.data && response.data.pizza) {
+      console.log("in ----------", response.data);
+      console.log("in ----------", response.data.pizza);
+
+      return response.data.pizza;
+    }
+    return null;
+  } catch (error) {
+    console.error(`Failed to fetch pizza with id ${pizzaId}:`, error.message);
+    return null;
+  }
+};
+
+const getAllOrdersByUser = async (userId, token) => {
   const allOrder = await Order.findAll({
     where: { user_id: userId },
-    include: [{ model: OrderItem, as: "items" }],
+    include: [{ model: OrderItem, as: "items", required: false }],
+    logging: console.log,
+    order: [["createdAt", "DESC"]],
   });
+  console.log("111111111111111");
 
   if (!allOrder) {
     return {
@@ -171,6 +208,38 @@ const getAllOrdersByUser = async (userId) => {
       message: "No order is placed",
     };
   }
+  console.log("all orders", allOrder);
+
+  for (const order of allOrder) {
+    for (const item of order.items) {
+      const pizzaDetails = await getPizzaById(item.pizza_id, token);
+      item.dataValues.pizza = pizzaDetails; // attach pizza data inside item
+    }
+  }
+
+  return {
+    error: false,
+    statusCode: 200,
+    orders: allOrder,
+  };
+};
+const getAllOrdersToDeleteUser = async (userId) => {
+  console.log("userId", userId);
+  
+  const allOrder = await Order.findAll({
+    where: { user_id: userId },
+    order: [["createdAt", "DESC"]],
+  });
+  console.log("111111111111111");
+
+  if (!allOrder) {
+    return {
+      error: false,
+      statusCode: 404,
+      message: "No order is placed",
+    };
+  }
+  console.log("all orders", allOrder);
 
   return {
     error: false,
@@ -395,7 +464,13 @@ const getAllOrders = async () => {
     const allOrders = await Order.findAll({
       where: {
         status: {
-          [Op.in]: ["Accepted", "Prepared", "Delivered"],
+          [Op.in]: [
+            "Payment Done",
+            "Accepted",
+            "Prepared",
+            "Dispatched",
+            "Delivered",
+          ],
         },
       },
       include: [{ model: OrderItem, as: "items" }],
@@ -413,11 +488,108 @@ const getAllOrders = async () => {
     const allOrdersObj = allOrders.map((order) => {
       return order.toJSON();
     });
+
+    //  const enrichedOrders = await Promise.allSettled(
+    //   allOrdersObj.map(async (order) => {
+    //     // Get user info
+    //     const userResponse = await axios.get(
+    //       `${process.env.AUTH_SERVICE}/get-user/${order.user_id}`
+    //     );
+    //     const userData = userResponse?.data || null;
+    //     console.log("userData",userData);
+        
+
+    //     // Get pizza info for each order item
+    //     const itemsWithPizza = await Promise.allSettled(
+          
+    //       order.items.map(async (item) => {
+    //         console.log("order items", item.pizza_id);
+    //         const pizzaResponse = await axios.get(
+    //           `${process.env.PIZZA_CATALOG}/get/${item.pizza_id}`
+    //         );
+    //         console.log("pizza response", pizzaResponse);
+    //         const pizzaData = pizzaResponse.data?.pizza || null;
+    //         console.log("pizza", pizzaData);
+            
+    //         return {
+    //           ...item,
+    //           pizza: pizzaData,
+    //         };
+    //       })
+    //     );
+
+    //     return {
+    //       ...order,
+    //       user: userData,
+    //        items: itemsWithPizza,
+          
+    //     };
+    //   })
+    // );
+      const enrichedOrders = await Promise.all(
+      allOrdersObj.map(async (order) => {
+        // ---- user ----
+        let userData = null;
+        try {
+          const userResponse = await axios.get(
+            `${process.env.AUTH_SERVICE}/get-user/${order.user_id}`
+          );
+          userData = userResponse?.data || null;
+        } catch (err) {
+          userData = { firstname: "Unknown", lastname: "", email: "N/A" }; // fallback
+        }
+
+        // ---- items ----
+        const itemsWithPizza = await Promise.all(
+          order.items.map(async (item) => {
+            try {
+              const pizzaResponse = await axios.get(
+                `${process.env.PIZZA_CATALOG}/get/${item.pizza_id}`
+              );
+              const pizzaData = pizzaResponse.data?.pizza || null;
+              return { ...item, pizza: pizzaData };
+            } catch (err) {
+              return { ...item, pizza: { pizzaname: "Unknown Pizza" } }; // fallback
+            }
+          })
+        );
+
+        return {
+          ...order,
+          user: userData,
+          items: itemsWithPizza,
+        };
+      })
+    );
+    
     return {
       error: false,
       statusCode: 200,
       message: "Got all orders",
-      order: allOrdersObj,
+      order: enrichedOrders,
+    };
+  } catch (error) {
+    console.log("in order-service ", error.message);
+    return {
+      error: true,
+      statusCode: 500,
+      message: "server error",
+      details: error.message,
+    };
+  }
+};
+
+
+
+const deleteOrder = async (orderId) => {
+  try {
+    const order = await Order.findByPk(orderId);
+    await order.destroy();
+
+    return {
+      error: false,
+      statusCode: 200,
+      message: "Order deleted successfully",
     };
   } catch (error) {
     console.log("in order-service ", error);
@@ -431,6 +603,10 @@ const getAllOrders = async () => {
 };
 
 const updateStatus = async (orderId, status) => {
+  console.log("update statuys called", orderId);
+  
+
+  
   console.log("-------------orderid", orderId);
   console.log("-------------status", status);
 
@@ -447,6 +623,11 @@ const updateStatus = async (orderId, status) => {
 
   order.status = status;
   await order.save();
+
+  const io = getIo();
+  console.log("io in updateStatus service", io);
+  
+  io.to(`order_${orderId}`).emit("statusUpdated", { orderId, status });
   return {
     error: false,
     statusCode: 200,
@@ -457,9 +638,11 @@ const updateStatus = async (orderId, status) => {
 module.exports = {
   createOrAppendOrder: createOrAppendOrder,
   getAllOrdersByUser,
+  deleteOrder,
   getAnOrderByUSer,
   removeAnOrderItem,
   confirmOrder,
   getAllOrders,
   updateStatus,
+  getAllOrdersToDeleteUser
 };

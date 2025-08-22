@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify"
 import styles from "../styles/SignUp.module.css";
+import { showToast } from "host/toast";
 
 
 function SignUp() {
@@ -43,7 +43,7 @@ function SignUp() {
         if(!result.success && !response.ok){
             setFormErrors(result.error)
         }else {
-          toast.success(result.message);
+          showToast(result.message, "success");
           setFormInput(initialFormInput);
           setFormErrors({});
           navigate("/login");

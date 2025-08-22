@@ -1,5 +1,5 @@
 import { Route, Routes, Navigate } from "react-router-dom";
-import {ToastContainer} from "react-toastify";
+// import {ToastContainer} from "react-toastify";
 import {BrowserRouter} from "react-router-dom";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
@@ -26,7 +26,6 @@ export default function App(){
    
     <AuthProvider>
       <AppRoutes/>
-       <ToastContainer/>
     </AuthProvider>
 
   )

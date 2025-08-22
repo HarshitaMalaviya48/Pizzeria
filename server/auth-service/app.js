@@ -15,12 +15,13 @@ const createProxyReqOptDecorator = require("./src/utils/proxyDecorator.js");
 const app = express();
 
 const corsOption = {
-  origin: ["http://localhost:5000", "http://localhost:5001", "http://localhost:5002", "http://localhost:3002"],
+  origin: ["http://localhost:5000", "http://localhost:5001", "http://localhost:5002", "http://localhost:5003", "http://localhost:3002", "http://localhost:3003", "http://localhost:3001", "http://localhost:3004"],
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credential: true
 }
 
 app.use(cors(corsOption));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -67,6 +68,7 @@ app.use(
     proxyReqOptDecorator: decorater,
   })
 );
+
 
 app.use(
   "/order/user",

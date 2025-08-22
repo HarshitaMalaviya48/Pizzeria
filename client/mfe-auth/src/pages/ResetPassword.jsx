@@ -1,6 +1,6 @@
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
+import { showToast } from "host/toast";
 import styles from "../styles/ResetPassword.module.css";
 
 function ResetPassword() {
@@ -50,7 +50,7 @@ function ResetPassword() {
     const preventRouteChange = (e) => {
       if (location.pathname !== `/reset-password/${token.token}`) {
         e.preventDefault();
-        toast.warn("You must finish resetting your password first.");
+        showToast("You must finish resetting your password first.", "warn")
         navigate(`/reset-password/${token.token}`, { replace: true });
       }
     };
@@ -98,16 +98,18 @@ function ResetPassword() {
       if (!result.success && !response.ok && response.status === 400) {
         setFormInputErrors(result.error);
       } else if (!result.success && response.status === 401) {
-        toast.error(result.message);
-        navigate("/login");
+        showToast(result.message, "error");
+     
+        navigate("/login", {replace: true});
       } else if (!result.success && !response.ok && response.status === 404) {
-        toast.error(result.message);
-        navigate("/");
+        showToast(result.message, "error");
+       
+        navigate("/", {replace: true});
       } else if (response.status === 200 && response.ok) {
         setFormInputErrors({});
         setFormInput(initialFormInput);
-        navigate("/login");
-        toast.success(result.message);
+        navigate("/login", {replace: true});
+       showToast(result.message, "success");
       }
     } catch (error) {
       console.error("Reset-password failed", error);

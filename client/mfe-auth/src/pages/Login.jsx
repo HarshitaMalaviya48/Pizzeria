@@ -1,13 +1,12 @@
 import { useState } from "react";
-import { NavLink, Navigate, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { Navigate, useNavigate, NavLink } from "react-router-dom";
+import { showToast } from "host/toast";
 import styles from "../styles/Login.module.css";
 import { AuthConsumer } from "../store/auth";
 
-
 function Login() {
   const navigate = useNavigate();
-  const { storeTokenInLS } = AuthConsumer();
+  const { setAuth, setLoading } = AuthConsumer();
   const initialFormInput = {
     email: "",
     password: "",
@@ -36,7 +35,7 @@ function Login() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formInput),
       });
-
+      console.log("---------------1111111111111", response);
       const result = await response.json();
 
       console.log("----------", result);
@@ -46,13 +45,33 @@ function Login() {
       } else if (!result.success && !response.ok && result.message) {
         setFormErrors({});
         setInvalidCredentialError(result.message);
-      } else if (response.ok && result.success) {
+      } else if (result.success) {
+        console.log(
+          "in else if login",
+          result.data.token,
+          result.data.user.role
+        );
         setFormErrors({});
-        storeTokenInLS(result.data.token);
+        localStorage.setItem("token", result.data.token);
+        localStorage.setItem("role", result.data.user.role);
+        setAuth({ token: result.data.token, role: result.data.user.role });
+        setLoading(false);
         setInvalidCredentialError("");
         setFormInput(initialFormInput);
-        toast.success(result.message);
-        navigate("/user/home");
+        console.log(" before run toast");
+        showToast(result.message, "success")
+        console.log("after run toast");
+      
+          if (result.data.user.role === "user") {
+            console.log("in user app", result.data.user.role);
+            // <Navigate to="/user/home" replace />;
+            navigate("/user/home");
+          } else if (result.data.user.role === "admin") {
+            console.log("in admin app", result.data.user.role);
+            // <Navigate to="/admin/orders" replace />;
+            navigate("/admin/orders");
+          }
+    
       }
     } catch (error) {
       console.error("login failed", error);

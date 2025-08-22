@@ -1,8 +1,13 @@
-import React from 'react'
+import React, {useContext} from 'react'
 import {NavLink} from "react-router-dom";
 import styles from "../styles/Home.module.css";
+import {AuthContext}from "../store/auth"
+
 
 function Home() {
+   const {token, role} = useContext(AuthContext);
+   console.log("token and role in home page", token, role);
+   
   return (
     <>
      <section className={styles.hero}>

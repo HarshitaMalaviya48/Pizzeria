@@ -42,7 +42,7 @@ const registerUser = async (userData) => {
       return {
         error: true,
         status: 409,
-        message: `${field} already exists`,
+        details: {[field] : `${field} already exists`},
       };
     }
 

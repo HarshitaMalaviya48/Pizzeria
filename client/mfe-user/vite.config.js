@@ -11,6 +11,7 @@ export default defineConfig({
       filename: "remoteEntry.js",
       remotes: {
         remote_auth_app: "http://localhost:5001/assets/remoteEntry.js",
+        host: "http://localhost:5000/assets/remoteEntry.js"
       },
       exposes: {
         "./App": "./src/App.jsx",
@@ -23,9 +24,6 @@ export default defineConfig({
           singleton: true,
         },
         "react-router-dom": {
-          singleton: true,
-        },
-        "react-toastify": {
           singleton: true,
         },
       },

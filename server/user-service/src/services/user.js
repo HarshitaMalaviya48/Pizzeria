@@ -152,4 +152,6 @@ const updatePassword = async(userId, passwordData, token) => {
   }
 }
 
+
+
 module.exports = { getUserFromId, deleteUser, updateUser, updateEmail, updatePassword };

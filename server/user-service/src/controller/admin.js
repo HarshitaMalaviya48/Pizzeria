@@ -1,8 +1,10 @@
-const { getAllUsers, deleteUser, updateUser } = require("../services/admin.js");
+const {getUserFromId, getAllUsers, deleteUser, updateUser } = require("../services/admin.js");
 const {
   successResponse,
   errorResponse,
 } = require("../utils/responseHandler.js");
+
+
 
 const getUsers = async (req, res) => {
   const result = await getAllUsers();

@@ -33,7 +33,7 @@ const forgotPassword = async (email) => {
     });
 
     // const resetLink = `http://localhost:5173/reset-password/${token}`;
-    const resetLink = `http://localhost:5001/reset-password/${token}`;
+    const resetLink = `http://localhost:5000/reset-password/${token}`;
 
     await sendMail(user.email, "Password Reset", resetLink);
 

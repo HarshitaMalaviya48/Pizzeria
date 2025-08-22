@@ -1,3 +1,6 @@
+
+
+
 import {
   BrowserRouter,
   Routes,
@@ -11,15 +14,17 @@ import PrivateRoute from "remote_auth_app/components/PrivateRoute";
 import PublicRoute from "remote_auth_app/components/PublicRoute";
 import { AuthProvider } from "remote_auth_app/store/auth";
 import NotFound from "./pages/NotFound";
+import {ToastContainer} from "react-toastify";
 // import { RemoteUserApp } from "./remoteModule";
 
 const RemoteAuthApp = lazy(() => import("remote_auth_app/App"));
 const RemoteUserApp = lazy(() => import("remote_user_app/App"));
+const RemoteAdminApp = lazy(() => import("remote_admin_app/App"));
 
 function AppLayout() {
   const location = useLocation();
   // const hideNavbarRoutes = ["/reset-password", "/reset-password/:token"];
-  const shouldHideNavbar = location.pathname.startsWith("/reset-password") || location.state?.notFound;
+  const shouldHideNavbar = location.pathname.startsWith("/reset-password") || location.state?.notFound || location.pathname.startsWith("/user/success") || location.pathname.startsWith("/user/cancel")
   console.log("-----------location", location);
   
 
@@ -42,10 +47,18 @@ function AppLayout() {
                 </PublicRoute>
               }
             />
+              <Route
+                path="/admin/*"
+                element={
+                  <PrivateRoute allowedRoles={["admin"]}>
+                    <RemoteAdminApp />
+                  </PrivateRoute>
+                }
+              />
             <Route
               path="/user/*"
               element={
-                <PrivateRoute>
+                <PrivateRoute allowedRoles={["user"]}>
                   <RemoteUserApp />
                 </PrivateRoute>
               }
@@ -67,6 +80,7 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <AppLayout />
+         <ToastContainer/>
       </BrowserRouter>
     </AuthProvider>
   );
